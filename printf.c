@@ -1,41 +1,48 @@
 #include "holberton.h"
-
-int _printf(const char * const format, ...)
+#include <stddef.h>
+#include <stdlib.h>
+#include <stdio.h>
+/**
+ * _printf - Build out the printf function
+ * @format: string passed with possible format specifiers
+ * Return: number of characters printed
+ */
+int _printf(const char *format, ...)
 {
-	convert_match m[] = {
-		{"%s", printf_string}, {"%c", printf_char},
-		{"%%", printf_37},
-		{"%i", printf_int}, {"%d", printf_dec}, {"%r", printf_srev},
-		{"%R", printf_rot13}, {"%b", printf_bin}, {"%u", printf_unsigned},
-		{"%o", printf_oct}, {"%x", printf_hex}, {"%X", printf_HEX},
-		{"%S", printf_exclusive_string}, {"%p", printf_pointer}
-	};
+	int i, blen, hlen;
+	double totalBuffer;
+	double *total;
+	va_list argp;
+	char buffer[BUFSIZE], *holder;
+	char *(*pointer_get_valid)(va_list);
 
-	va_list args;
-	int i = 0, j, len = 0;
-
-	va_start(args, format);
-	if (format == NULL || (format[0] == '%' && format[1] == '\0'))
-		return (-1);
-
-Here:
-	while (format[i] != '\0')
+	for (i = 0; i < BUFSIZE; i++)
 	{
-		j = 13;
-		while (j >= 0)
-		{
-			if (m[j].id[0] == format[i] && m[j].id[1] == format[i + 1])
-			{
-				len += m[j].f(args);
-				i = i + 2;
-				goto Here;
-			}
-			j--;
-		}
-		_putchar(format[i]);
-		len++;
-		i++;
+		buffer[i] = 0;
 	}
-	va_end(args);
-	return (len);
+	totalBuffer = 0;
+	pointer_get_valid = NULL;
+	total = &totalBuffer;
+	va_start(argp, format);
+	for (i = blen = hlen = 0; format && format[i]; i++)
+	{
+		if (format[i] == '%')
+		{
+			pointer_get_valid = get_valid_type(format[i + 1]);
+			holder = (pointer_get_valid == NULL) ?
+				found_nothing(format[i + 1]) :
+				pointer_get_valid(argp);
+			hlen = _strlen(holder);
+			blen = alloc_buffer(holder, hlen, buffer, blen, total);
+			i++;
+		}
+		else
+		{
+			holder = ctos(format[i]);
+			blen = alloc_buffer(holder, 1, buffer, blen, total);
+		}
+	}
+	va_end(argp);
+	_puts(buffer, blen);
+	return (totalBuffer + blen);
 }
